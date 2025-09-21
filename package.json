@@ -32,13 +32,7 @@
   },
   "engines": {
     "node": ">=14.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/example/all-is-well.git"
-  },
-  "bugs": {
-    "url": "https://github.com/example/all-is-well/issues"
-  },
-  "homepage": "https://github.com/example/all-is-well#readme"
-}
+    }
+  }
+ 
+  
