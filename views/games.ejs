@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALL is well</title>
+    <style>
+        /* --- CSS Custom Properties (Theme) --- */
+        :root {
+            --bg-start: #2b5876;
+            --bg-end: #4e4376;
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --card-border: rgba(255, 255, 255, 0.2);
+            --card-border-hover: rgba(255, 255, 255, 0.4);
+            --card-shadow: rgba(0, 0, 0, 0.2);
+            --text-primary: rgba(255, 255, 255, 0.9);
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --particle-color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* --- Base Styles & Layout --- */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-start);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--text-primary);
+        }
+
+        /* --- Animated Gradient Background & Particle Container --- */
+        body {
+            background: linear-gradient(135deg, var(--bg-start), var(--bg-end), #1c3359, var(--bg-start));
+            background-size: 400% 400%;
+            animation: gradient-shift 25s ease-in-out infinite;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #particle-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            background-color: var(--particle-color);
+            border-radius: 50%;
+            opacity: 0;
+            animation: float-particle 20s infinite ease-in-out, twinkle 5s infinite alternate;
+            transition: transform 0.3s ease-out; /* For smooth mouse interaction */
+        }
+
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes float-particle {
+             0% { transform: translateY(0); }
+             50% { transform: translateY(-20px); }
+             100% { transform: translateY(0); }
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0; }
+            50% { opacity: 0.7; }
+            100% { opacity: 0; }
+        }
+
+        /* --- Header Styling --- */
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fade-in 1s ease-out;
+            z-index: 1; /* Keep header above particles */
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin: 0;
+        }
+
+        header p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        /* --- Game Card Container --- */
+        .card-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            padding: 20px;
+            max-width: 1000px;
+            z-index: 1; /* Keep cards above particles */
+        }
+
+        /* --- Floating Card Styles (Glassmorphism) --- */
+        .game-card {
+            width: 200px;
+            height: 250px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px 0 var(--card-shadow);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            
+            text-decoration: none;
+            color: var(--text-primary);
+            
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-evenly; /* Adjusted for icon */
+            text-align: center;
+            
+            padding: 20px;
+            transition: transform 0.1s linear, box-shadow 0.3s ease, border-color 0.3s ease;
+            will-change: transform;
+            
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fade-in 0.5s ease-out forwards, float 6s ease-in-out infinite;
+        }
+
+        .game-card:nth-child(1) { animation-delay: 0.2s, 0s; }
+        .game-card:nth-child(2) { animation-delay: 0.3s, 1.5s; }
+        .game-card:nth-child(3) { animation-delay: 0.4s, 0.5s; }
+        .game-card:nth-child(4) { animation-delay: 0.5s, 1s; }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes fade-in {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .game-card:hover {
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.3);
+            border-color: var(--card-border-hover); /* Enhanced hover effect */
+        }
+        
+        /* New: Styles for game icons */
+        .game-icon {
+            margin-bottom: 10px;
+        }
+        .game-icon svg {
+            width: 50px;
+            height: 50px;
+            fill: var(--text-secondary);
+        }
+
+        .game-card h2 {
+            font-size: 1.8rem;
+            margin: 0;
+        }
+
+        .game-card p {
+            font-size: 0.9rem; /* Slightly smaller to fit better */
+            color: var(--text-secondary);
+        }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            header p { font-size: 1rem; }
+            .card-container { gap: 20px; }
+            .game-card { width: 150px; height: 200px; }
+            .game-card h2 { font-size: 1.5rem; }
+            .game-card p { font-size: 0.9rem; }
+        }
+        
+        @media (max-width: 480px) {
+            .card-container { flex-direction: column; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+    <div id="particle-container"></div>
+    <header>
+        <h1>ALL is well</h1>
+        <p>stress relief games</p>
+    </header>
+    
+    <main class="card-container">
+        <!-- Each card is a link. Replace '#' with the actual paths to your games. -->
+        <a href="/piano" class="game-card" data-title="Piano">
+            <div class="game-icon">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 16H9v-4h2v4zm0-6H9v-4h2v4zm4 6h-2v-4h2v4zm0-6h-2v-4h2v4zm4 6h-2v-4h2v4zm0-6h-2v-4h2v4z"></path></svg>
+            </div>
+            <h2>Piano</h2>
+            <p>Play calming melodies on an aurora-lit piano.</p>
+        </a>
+        <a href="/bubblepop" class="game-card" data-title="Bubble Pop">
+            <div class="game-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-9a4 4 0 118 0 4 4 0 01-8 0z"></path></svg>
+            </div>
+            <h2>Bubble Pop</h2>
+            <p>Tap to create and watch vibrant bubbles float away.</p>
+        </a>
+        <a href="/musicflower" class="game-card" data-title="Music Flower">
+            <div class="game-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-8c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm10 0c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-5 5c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"></path></svg>
+            </div>
+            <h2>Music Flower</h2>
+            <p>Grow a beautiful, glowing flower with sound.</p>
+        </a>
+        <a href="/leafbasket" class="game-card" data-title="Leaf Basket">
+            <div class="game-icon">
+                <svg viewBox="0 0 24 24"><path d="M17.12 10.88C15.99 9.75 14.58 9 13 9c-2.34 0-4.45 1.18-5.74 3H5c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h2v-2.14c0-1.09.43-2.14 1.2-2.92 1.1-1.1 2.58-1.79 4.12-1.85 2.13-.09 4.08.76 5.54 2.22l-1.41 1.41c-1.13-1.13-2.6-1.78-4.13-1.72-1.22.05-2.39.53-3.27 1.41C9.43 15.86 9 16.91 9 18v2h8c1.1 0 2-.9 2-2v-2c0-1.58-.91-2.99-2.2-3.68l-1.68-1.44z"></path></svg>
+            </div>
+            <h2>Leaf Basket</h2>
+            <p>Catch falling leaves in a gentle, relaxing game.</p>
+        </a>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            /**
+             * Interactive Card Tilt Effect
+             */
+            const cards = document.querySelectorAll('.game-card');
+            const TILT_STRENGTH = 15;
+
+            cards.forEach(card => {
+                card.addEventListener('mousemove', (e) => {
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left - rect.width / 2;
+                    const y = e.clientY - rect.top - rect.height / 2;
+                    const rotateY = (TILT_STRENGTH * x) / (rect.width / 2);
+                    const rotateX = (-1 * TILT_STRENGTH * y) / (rect.height / 2);
+                    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+                });
+
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = ''; // Reset to let CSS animation take over
+                });
+            });
+
+            /**
+             * Interactive Particle Nebula
+             */
+            const particleContainer = document.getElementById('particle-container');
+            const PARTICLE_COUNT = 70;
+            const INTERACTION_RADIUS = 150;
+            let particles = [];
+
+            // Create particles
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                const size = Math.random() * 3 + 1;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                const x = Math.random() * 100;
+                const y = Math.random() * 100;
+                particle.style.left = `${x}%`;
+                particle.style.top = `${y}%`;
+
+                // Stagger animations for a more natural effect
+                particle.style.animationDelay = `${Math.random() * 20}s, ${Math.random() * 5}s`;
+                particle.style.animationDuration = `${Math.random() * 10 + 15}s, ${Math.random() * 3 + 3}s`;
+
+                particleContainer.appendChild(particle);
+                particles.push({
+                    element: particle,
+                    baseX: x,
+                    baseY: y
+                });
+            }
+
+            // Handle mouse interaction
+            document.body.addEventListener('mousemove', (e) => {
+                const cursorX = (e.clientX / window.innerWidth) * 100;
+                const cursorY = (e.clientY / window.innerHeight) * 100;
+
+                particles.forEach(p => {
+                    const dx = p.baseX - cursorX;
+                    const dy = p.baseY - cursorY;
+                    const distance = Math.hypot(dx, dy);
+                    const force = Math.max(0, (INTERACTION_RADIUS - distance * 2) / INTERACTION_RADIUS);
+
+                    if (force > 0) {
+                        const pushX = (dx / distance) * force * 2; // Multiplier for push distance
+                        const pushY = (dy / distance) * force * 2;
+                        p.element.style.transform = `translate(${pushX}vw, ${pushY}vh)`;
+                    } else {
+                        p.element.style.transform = 'translate(0, 0)';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+

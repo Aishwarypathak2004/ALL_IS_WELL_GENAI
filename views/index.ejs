@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'ALL IS WELL - Mental Wellness App' %></title>
+    <meta name="description" content="A gentle, supportive space for mental wellness, self-reflection, and finding peace in difficult moments.">
+    <meta name="keywords" content="mental health, wellness, meditation, support, breathing exercises">
+    
+    <meta name="theme-color" content="#6366f1">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🕊️</text></svg>">
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body class="<%= pageClass || '' %>">
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <header role="banner" class="site-header">
+        <nav role="navigation" aria-label="Main navigation" class="nav-container">
+            <div class="nav-brand">
+                <a href="/" class="logo-text" aria-label="All Is Well Home">ALL IS WELL</a>
+                <span class="logo-subtitle">Mental Wellness Space</span>
+            </div>
+            <button class="nav-toggle" aria-expanded="false" aria-controls="nav-menu" aria-label="Toggle navigation menu">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+            <ul id="nav-menu" class="nav-menu" role="list">
+                <li><a href="/" class="nav-link">Home</a></li>
+                <li><a href="#relief" class="nav-link">Relief Tools</a></li>
+                <li><a href="#motivation" class="nav-link">Motivation</a></li>
+                <li><a href="/assessment" class="nav-link assessment-trigger" aria-describedby="assessment-desc">Assessment</a></li>
+                 <li><a href="/games" class="nav-link">Games</a></li>
+                
+                <% if (isLoggedIn) { %>
+                    <li><a href="/logout" class="nav-link">Logout</a></li>
+                <% } else { %>
+                    <li><a href="/signup" class="nav-link">Sign up</a></li>
+                    <li><a href="/login" class="nav-link">Login</a></li>
+                <% } %>
+            </ul>
+        </nav>
+    </header>
+
+    <main id="main-content" role="main">
+        <% if (flashMessage && flashMessage.length > 0) { %>
+            <div class="flash-message flash-error" role="alert">
+                <p><%= flashMessage %></p>
+                <button class="flash-close" aria-label="Close message">&times;</button>
+            </div>
+        <% } %>
+        
+        <section id="hero" class="hero-section" role="banner">
+            <div class="hero-container">
+                <h1 class="hero-title" aria-live="polite">
+                    <span class="hero-text">ALL IS WELL</span>
+                    <div class="hero-glow" aria-hidden="true"></div>
+                </h1>
+                <div class="hero-subtitle-container">
+                    <p class="hero-subtitle" id="affirmation-text" aria-live="polite" aria-atomic="true">
+                    </p>
+                </div>
+                <div class="hero-actions">
+                    <button class="btn btn-primary breathing-trigger" aria-describedby="breathing-desc">
+                        Start Breathing Exercise
+                        <span class="btn-icon" aria-hidden="true">🫁</span>
+                    </button>
+                    <a href="/assessment" class="btn btn-secondary assessment-trigger" aria-describedby="assessment-desc">
+                        Take Wellness Check
+                        <span class="btn-icon" aria-hidden="true">📝</span>
+                    </a>
+                </div>
+            </div>
+            <div class="hero-background" aria-hidden="true">
+                <div class="floating-shape shape-1"></div>
+                <div class="floating-shape shape-2"></div>
+                <div class="floating-shape shape-3"></div>
+            </div>
+        </section>
+
+        <section id="relief" class="relief-section">
+            <div class="container">
+                <header class="section-header">
+                    <h2 class="section-title">Find Your Peace</h2>
+                    <p class="section-subtitle">Interactive tools to help you breathe, relax, and center yourself</p>
+                </header>
+                
+                <div class="relief-grid">
+                    <article class="relief-card breathing-card">
+                        <header class="card-header">
+                            <h3 class="card-title">Breathing Circle</h3>
+                            <p class="card-description">Follow the gentle rhythm to calm your mind</p>
+                        </header>
+                        <div class="breathing-container">
+                            <div class="breathing-circle" role="img" aria-label="Breathing visualization circle">
+                                <div class="breathing-inner" aria-hidden="true"></div>
+                                <div class="breathing-pulse" aria-hidden="true"></div>
+                            </div>
+                            <div class="breathing-instructions" aria-live="polite" id="breathing-instructions">
+                                Click the circle to begin
+                            </div>
+                            <div class="breathing-controls">
+                                <button class="btn-icon-only breathing-play" aria-label="Start breathing exercise" title="Start breathing">
+                                    ▶️
+                                </button>
+                                <button class="btn-icon-only breathing-pause" aria-label="Pause breathing exercise" title="Pause breathing" style="display: none;">
+                                    ⏸️
+                                </button>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="relief-card affirmations-card">
+                        <header class="card-header">
+                            <h3 class="card-title">Gentle Reminders</h3>
+                            <p class="card-description">Click the floating thoughts for encouragement</p>
+                        </header>
+                        <div class="affirmations-container" role="region" aria-label="Interactive affirmations">
+                            <div class="floating-affirmation" tabindex="0" role="button" aria-label="Affirmation: You are enough">
+                                <span class="affirmation-text">You are enough</span>
+                                <div class="affirmation-glow" aria-hidden="true"></div>
+                            </div>
+                            <div class="floating-affirmation" tabindex="0" role="button" aria-label="Affirmation: This too shall pass">
+                                <span class="affirmation-text">This too shall pass</span>
+                                <div class="affirmation-glow" aria-hidden="true"></div>
+                            </div>
+                            <div class="floating-affirmation" tabindex="0" role="button" aria-label="Affirmation: You are loved">
+                                <span class="affirmation-text">You are loved</span>
+                                <div class="affirmation-glow" aria-hidden="true"></div>
+                            </div>
+                            <div class="floating-affirmation" tabindex="0" role="button" aria-label="Affirmation: Peace is within you">
+                                <span class="affirmation-text">Peace is within you</span>
+                                <div class="affirmation-glow" aria-hidden="true"></div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section id="motivation" class="motivation-section">
+            <div class="container">
+                <header class="section-header">
+                    <h2 class="section-title">Daily Inspiration</h2>
+                    <p class="section-subtitle">Gentle words to carry you through the day</p>
+                </header>
+                
+                <div class="motivation-carousel" role="region" aria-label="Daily motivation carousel">
+                    <div class="carousel-container">
+                        <div class="carousel-track" id="motivation-track" aria-live="polite">
+                        </div>
+                        <div class="carousel-indicators" role="tablist" aria-label="Motivation slides">
+                        </div>
+                        <div class="carousel-controls">
+                            <button class="carousel-btn carousel-prev" aria-label="Previous motivation" title="Previous">
+                                ←
+                            </button>
+                            <button class="carousel-btn carousel-next" aria-label="Next motivation" title="Next">
+                                →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="assessment-cta" class="cta-section">
+            <div class="container">
+                <div class="cta-card">
+                    <header class="cta-header">
+                        <h2 class="cta-title">Check In With Yourself</h2>
+                        <p class="cta-description">A gentle self-assessment to understand how you're feeling today</p>
+                        <p id="assessment-desc" class="sr-only">This assessment is not a diagnostic tool and is meant for self-reflection only</p>
+                    </header>
+                    <div class="cta-actions">
+                         <a href="/assessment" class="btn btn-primary assessment-trigger">
+                            Start Wellness Check
+                            <span class="btn-icon" aria-hidden="true">📋</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer role="contentinfo" class="site-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3 class="footer-title">ALL IS WELL</h3>
+                    <p class="footer-text">A gentle space for mental wellness and self-care</p>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-subtitle">Important</h4>
+                    <p class="footer-disclaimer">
+                        This app is for supportive purposes only and is not a substitute for professional mental health care. 
+                        If you're in crisis, please contact emergency services or a crisis helpline immediately.
+                    </p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="footer-copyright">&copy; 2025 ALL IS WELL. Made with care for mental wellness.</p>
+            </div>
+        </div>
+    </footer>
+
+    <div id="assessment-modal" class="modal" role="dialog" aria-labelledby="assessment-modal-title" aria-hidden="true" tabindex="-1">
+        <div class="modal-backdrop" aria-hidden="true"></div>
+        <div class="modal-container">
+            <div class="modal-content">
+                <header class="modal-header">
+                    <h2 id="assessment-modal-title" class="modal-title">Wellness Check-In</h2>
+                    <p class="modal-subtitle">This is a self-reflection tool, not a diagnostic assessment</p>
+                    <button class="modal-close" aria-label="Close assessment" title="Close">×</button>
+                </header>
+                <div class="modal-body">
+                    <div id="assessment-content">
+                        <div class="assessment-progress">
+                            <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                                <div class="progress-fill"></div>
+                            </div>
+                            <span class="progress-text" aria-live="polite">Question 1 of 8</span>
+                        </div>
+                        <div id="question-container" class="question-container">
+                        </div>
+                        <div class="assessment-actions">
+                            <button class="btn btn-secondary" id="prev-question" disabled>Previous</button>
+                            <button class="btn btn-primary" id="next-question">Next</button>
+                        </div>
+                    </div>
+                    <div id="assessment-results" class="assessment-results" style="display: none;">
+                        <div class="results-content">
+                            <h3 class="results-title">Your Wellness Check Results</h3>
+                            <div class="results-score">
+                                <div class="score-circle">
+                                    <span class="score-number" id="final-score">0</span>
+                                    <span class="score-label" id="max-score-label">/ 28</span>
+                                </div>
+                            </div>
+                            <div class="results-category">
+                                <p id="results-text" class="results-description"></p>
+                            </div>
+                            <div class="results-actions">
+                                <button class="btn btn-primary" id="export-results">Export Results</button>
+                                <button class="btn btn-secondary" id="retake-assessment">Take Again</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <a href="/chat" id="chat-toggle" class="chat-toggle" role="button" tabindex="0" aria-label="Open chat support" title="Chat Support">
+        <span class="chat-icon" aria-hidden="true">💬</span>
+        <span class="chat-badge" aria-hidden="true"></span>
+    </a>
+
+    <div id="chat-panel" class="chat-panel" role="complementary" aria-label="Chat support panel" aria-hidden="true">
+        <div class="chat-header">
+            <h3 class="chat-title">Supportive Chat</h3>
+            <p class="chat-subtitle">A gentle space to share your thoughts</p>
+            <button class="chat-close" aria-label="Close chat" title="Close">×</button>
+        </div>
+        <div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-label="Chat messages">
+            <div class="chat-message bot-message">
+                <div class="message-content">
+                    <p>Hello, I'm here to listen. How are you feeling today?</p>
+                </div>
+                <div class="message-time" aria-label="Message sent at">Just now</div>
+            </div>
+        </div>
+        <form class="chat-input-form" id="chat-form" aria-label="Send message">
+            <div class="chat-input-container">
+                <textarea 
+                    id="chat-input" 
+                    class="chat-input" 
+                    placeholder="Share what's on your mind..."
+                    aria-label="Type your message"
+                    rows="1"
+                ></textarea>
+                <button type="submit" class="chat-send" aria-label="Send message" title="Send">
+                    <span aria-hidden="true">→</span>
+                </button>
+            </div>
+            <div class="chat-disclaimer">
+                <small>This is a supportive chat tool, not professional therapy. Crisis resources are available if needed.</small>
+            </div>
+        </form>
+    </div>
+
+    <div id="crisis-modal" class="modal crisis-modal" role="alertdialog" aria-labelledby="crisis-modal-title" aria-hidden="true" tabindex="-1">
+        <div class="modal-backdrop" aria-hidden="true"></div>
+        <div class="modal-container">
+            <div class="modal-content crisis-content">
+                <header class="modal-header crisis-header">
+                    <h2 id="crisis-modal-title" class="modal-title">Immediate Support Available</h2>
+                    <div class="crisis-icon" aria-hidden="true">🆘</div>
+                </header>
+                <div class="modal-body">
+                    <div class="crisis-message">
+                        <p class="crisis-text">It sounds like you might be going through a really difficult time. You don't have to face this alone.</p>
+                        
+                        <div class="crisis-resources">
+                            <h3>Immediate Support:</h3>
+                            <div class="resource-list">
+                                <div class="resource-item">
+                                    <strong>Crisis Text Line:</strong>
+                                    <p>Text HOME to 741741</p>
+                                </div>
+                                <div class="resource-item">
+                                    <strong>National Suicide Prevention Lifeline:</strong>
+                                    <p>Call or Text 988</p>
+                                </div>
+                                <div class="resource-item">
+                                    <strong>Emergency Services:</strong>
+                                    <p>Call 911 (US) or your local emergency number</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="crisis-actions">
+                            <a href="tel:988" class="btn btn-crisis">Call 988 Now</a>
+                            <button class="btn btn-secondary crisis-close">I'm Safe for Now</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="announcements" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+    
+    <script>
+        const IS_LOGGED_IN = <%= isLoggedIn %>;
+    </script>
+    <script src="/js/script.js"></script>
+
+    <div class="sr-only">
+        <p id="breathing-desc">Interactive breathing exercise with visual guidance to help you relax and center yourself</p>
+    </div>
+</body>
+</html>

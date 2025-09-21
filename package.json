@@ -1,0 +1,44 @@
+{
+  "name": "all-is-well",
+  "version": "1.0.0",
+  "description": "A mental wellness web application providing supportive tools for stress relief, self-assessment, and gentle guidance",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "mental-health",
+    "wellness",
+    "meditation",
+    "self-care",
+    "express",
+    "ejs"
+  ],
+  "author": "ALL IS WELL Team",
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "bcryptjs": "^3.0.2",
+    "connect-flash": "^0.1.1",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.2",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "express-session": "^1.18.2",
+    "mongoose": "^8.18.1",
+    "nodemon": "^3.1.10"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/example/all-is-well.git"
+  },
+  "bugs": {
+    "url": "https://github.com/example/all-is-well/issues"
+  },
+  "homepage": "https://github.com/example/all-is-well#readme"
+}

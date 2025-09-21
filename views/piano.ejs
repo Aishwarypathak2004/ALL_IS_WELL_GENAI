@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Web Piano</title>
+    <style>
+        /* --- CSS Custom Properties (New "Aurora" Theme) --- */
+        :root {
+            --bg-start: #1c233f;
+            --bg-end: #2d3a5e;
+            --key-bg: rgba(255, 255, 255, 0.1);
+            --key-border: rgba(255, 255, 255, 0.2);
+            --key-glow: 0 0 15px rgba(180, 220, 255, 0.3);
+            --key-glow-pressed: 0 0 25px rgba(200, 230, 255, 0.7);
+            --key-text-color: rgba(255, 255, 255, 0.8);
+            --particle-color: #a0d2eb;
+        }
+
+        /* --- Base Styles & Layout --- */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-start); /* Fallback */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            align-items: flex-end; /* Align piano to the bottom */
+            justify-content: center;
+        }
+
+        /* --- Animated Aurora Background --- */
+        body {
+            background: linear-gradient(135deg, var(--bg-start), var(--bg-end), #4a3a69, var(--bg-start));
+            background-size: 400% 400%;
+            animation: gradient-shift 20s ease-in-out infinite;
+        }
+
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- Piano Container --- */
+        #piano {
+            display: flex;
+            width: 100%;
+            height: 40vh; /* Takes up 40% of the viewport height */
+            max-width: 800px; /* Max width on larger screens */
+            padding: 10px;
+            z-index: 10; /* Ensure keys are above particles */
+        }
+
+        /* --- Piano Key Styles (Glassmorphism) --- */
+        .key {
+            flex: 1;
+            margin: 0 5px;
+            border: 1px solid var(--key-border);
+            border-radius: 8px;
+            background-color: var(--key-bg);
+            box-shadow: var(--key-glow);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 20px;
+            font-size: 1.5rem;
+            color: var(--key-text-color);
+            
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            
+            transition: transform 0.05s ease, box-shadow 0.1s ease, background-color 0.1s ease;
+        }
+        
+        /* --- Key Pressed State --- */
+        .key.pressed {
+            background-color: rgba(255, 255, 255, 0.2);
+            box-shadow: var(--key-glow-pressed);
+            transform: scale(0.98);
+        }
+
+        /* --- New: Interactive Particle Container --- */
+        #particle-container {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none; /* Allows clicks to pass through to the piano */
+            overflow: hidden;
+        }
+
+        /* --- New: Particle Styles --- */
+        .particle {
+            position: absolute;
+            background-color: var(--particle-color);
+            border-radius: 50%;
+            opacity: 1;
+            box-shadow: 0 0 10px var(--particle-color);
+            animation: float-up 2s ease-out forwards;
+        }
+        
+        /* New: Particle Animation */
+        @keyframes float-up {
+            from {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            to {
+                transform: translateY(-200px) scale(0);
+                opacity: 0;
+            }
+        }
+
+        /* --- Responsive Font Size --- */
+        @media (max-width: 600px) {
+            .key {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="particle-container"></div>
+    <div id="piano">
+        <div class="key" data-note="Sa" role="button" aria-label="Play note Sa">Sa</div>
+        <div class="key" data-note="Re" role="button" aria-label="Play note Re">Re</div>
+        <div class="key" data-note="Ga" role="button" aria-label="Play note Ga">Ga</div>
+        <div class="key" data-note="Ma" role="button" aria-label="Play note Ma">Ma</div>
+        <div class="key" data-note="Pa" role="button" aria-label="Play note Pa">Pa</div>
+        <div class="key" data-note="Dha" role="button" aria-label="Play note Dha">Dha</div>
+        <div class="key" data-note="Ni" role="button" aria-label="Play note Ni">Ni</div>
+        <div class="key" data-note="SaHigh" role="button" aria-label="Play high note Sa">Sa</div>
+    </div>
+
+    <script>
+        // --- 1. SETUP AND CONFIGURATION ---
+
+        const piano = document.getElementById('piano');
+        const particleContainer = document.getElementById('particle-container');
+
+        const NOTE_FREQUENCIES = {
+            'Sa': 261.63, 'Re': 293.66, 'Ga': 329.63, 'Ma': 349.23,
+            'Pa': 392.00, 'Dha': 440.00, 'Ni': 493.88, 'SaHigh': 523.25,
+        };
+        
+        let audioContext;
+        let activeOscillators = {};
+
+        // --- 2. WEB AUDIO API LOGIC ---
+
+        function initAudioContext() {
+            if (audioContext) return;
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                alert("Web Audio API is not supported in this browser.");
+            }
+        }
+
+        /**
+         * Plays a note for a given key.
+         * --- Updated Sound ---
+         * This now uses multiple oscillators (a fundamental tone and its harmonics)
+         * to create a richer, more pleasant sound than a single sine wave.
+         * @param {string} note - The name of the note (e.g., 'Sa', 'Re').
+         */
+        function playNote(note) {
+            if (!audioContext) return;
+            if (activeOscillators[note]) stopNote(note);
+
+            const masterGain = audioContext.createGain();
+            masterGain.connect(audioContext.destination);
+
+            // --- Smooth Attack ---
+            masterGain.gain.setValueAtTime(0, audioContext.currentTime);
+            masterGain.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.02); // Quick fade in
+            
+            const fundamental = NOTE_FREQUENCIES[note];
+            const harmonics = [fundamental, fundamental * 2, fundamental * 3];
+            const oscillators = [];
+
+            harmonics.forEach((freq, i) => {
+                const osc = audioContext.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, audioContext.currentTime);
+                
+                // Lower the volume of the harmonics
+                const harmonicGain = audioContext.createGain();
+                harmonicGain.gain.value = 1 / (i + 1); // Fundamental is loudest
+                
+                osc.connect(harmonicGain).connect(masterGain);
+                osc.start();
+                oscillators.push(osc);
+            });
+            
+            activeOscillators[note] = { oscillators, masterGain };
+        }
+
+        /**
+         * Stops a playing note for a given key.
+         * --- Updated Sound ---
+         * The release time is now much longer, allowing notes to fade out gracefully
+         * and create a more resonant, lasting sound.
+         * @param {string} note - The name of the note to stop.
+         */
+        function stopNote(note) {
+            const activeNote = activeOscillators[note];
+            if (activeNote) {
+                // --- Smooth & Long Release ---
+                const releaseTime = audioContext.currentTime + 1.5; // Fade out over 1.5 seconds
+                activeNote.masterGain.gain.linearRampToValueAtTime(0, releaseTime);
+                
+                activeNote.oscillators.forEach(osc => {
+                    osc.stop(releaseTime);
+                });
+                delete activeOscillators[note];
+            }
+        }
+
+        // --- 3. INTERACTIVE PARTICLE EFFECT ---
+
+        /**
+         * Creates a burst of glowing particles from a pressed key.
+         * @param {HTMLElement} keyElement - The DOM element of the key that was pressed.
+         */
+        function createParticles(keyElement) {
+            const rect = keyElement.getBoundingClientRect();
+            const particleCount = 5;
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                const size = Math.random() * 5 + 2; // Particle size between 2px and 7px
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // Position particle randomly along the top edge of the key
+                particle.style.left = `${rect.left + Math.random() * rect.width}px`;
+                particle.style.top = `${rect.top}px`;
+                
+                // Add a random horizontal drift to the animation
+                const drift = (Math.random() - 0.5) * 100;
+                particle.style.setProperty('--drift', `${drift}px`);
+                
+                particleContainer.appendChild(particle);
+
+                // Remove the particle from the DOM after its animation finishes to prevent memory leaks.
+                particle.addEventListener('animationend', () => {
+                    particle.remove();
+                });
+            }
+        }
+        
+        // --- 4. EVENT HANDLING ---
+        
+        let isPointerDown = false;
+
+        function handlePress(e) {
+            initAudioContext();
+            e.preventDefault();
+
+            const key = e.target;
+            if (key.classList.contains('key')) {
+                const note = key.dataset.note;
+                key.classList.add('pressed');
+                playNote(note);
+                createParticles(key); // Trigger particle effect
+            }
+        }
+
+        function handleRelease(e) {
+            const key = e.target;
+            if (key.classList.contains('key')) {
+                const note = key.dataset.note;
+                key.classList.remove('pressed');
+                stopNote(note);
+            }
+        }
+
+        piano.addEventListener('pointerdown', handlePress);
+        piano.addEventListener('pointerup', handleRelease);
+        
+        piano.addEventListener('pointerleave', (e) => {
+            for (const note in activeOscillators) {
+                const keyElement = document.querySelector(`.key[data-note="${note}"]`);
+                if (keyElement) {
+                    keyElement.classList.remove('pressed');
+                }
+                stopNote(note);
+            }
+        });
+
+    </script>
+</body>
+</html>
+

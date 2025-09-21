@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Falling Leaves - A Stress Relief Game</title>
+    <style>
+        /* * Base styles to ensure the game takes up the full screen.
+         * The design is mobile-first, using viewport units and flexbox 
+         * to center content, ensuring it adapts to any screen size.
+         */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Prevents scrollbars from appearing */
+            font-family: 'Inter', sans-serif; /* A clean, modern font */
+        }
+
+        /* * The main game container.
+         * A soft, soothing pastel gradient is used for the background.
+         * It acts as the stage for all animated elements.
+         * The `touch-action: none` property improves touch responsiveness on mobile
+         * by preventing default browser actions like scrolling or zooming.
+         */
+        #game-container {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(160deg, #a0d2eb, #e5eaf5, #d0bdf4, #8458B3);
+            position: relative;
+            cursor: default;
+            user-select: none; /* Prevents text selection during interaction */
+            touch-action: none;
+        }
+
+        /* * Style for the individual leaf elements.
+         * `position: absolute` allows us to control their x/y coordinates with JavaScript.
+         * `will-change: transform` is a performance hint for the browser, as the
+         * transform property will be updated continuously.
+         */
+        .leaf {
+            position: absolute;
+            will-change: transform;
+            pointer-events: none; /* Leaves don't intercept clicks, the container does */
+        }
+        
+        /* * SVG fill colors for the leaves, giving them a natural, varied look.
+         * Using `nth-child` is a simple way to apply different colors without JS logic.
+         */
+        .leaf:nth-child(5n) svg { fill: #c97c5d; }
+        .leaf:nth-child(5n + 1) svg { fill: #e8ac65; }
+        .leaf:nth-child(5n + 2) svg { fill: #8d9f71; }
+        .leaf:nth-child(5n + 3) svg { fill: #d4a6a6; }
+        .leaf:nth-child(5n + 4) svg { fill: #a36d6d; }
+
+
+        /* * Style for the ripple effect on tap/click.
+         * It's a simple circle that scales up and fades out using a CSS animation.
+         * The `transform: translate(-50%, -50%)` trick centers it on the click point.
+         */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.7);
+            pointer-events: none;
+            animation: ripple-effect 0.75s ease-out forwards;
+            will-change: transform, opacity;
+            transform: translate(-50%, -50%);
+        }
+
+        /* * Keyframes for the ripple animation.
+         * It starts as a small, fully opaque circle and expands while fading out.
+         */
+        @keyframes ripple-effect {
+            from {
+                width: 0;
+                height: 0;
+                opacity: 1;
+            }
+            to {
+                width: 100px; /* Final size of the ripple */
+                height: 100px;
+                opacity: 0;
+            }
+        }
+        
+        /* Onboarding hint for users */
+        .hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.8);
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            pointer-events: none;
+            animation: fade-out 2s ease 5s forwards; /* Fades out after 5 seconds */
+        }
+        
+        @keyframes fade-out {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        /* Style for the score display */
+        #score {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 24px;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Style for the leaf-catching basket */
+        #basket {
+            position: absolute;
+            bottom: 20px;
+            width: 120px;
+            height: 80px;
+            /* Center the basket initially */
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none; /* The basket itself shouldn't be interactive */
+            will-change: left; /* Performance hint for the browser */
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="score">Score: 0</div>
+        <div id="basket">
+            <!-- Simple SVG for the basket shape -->
+            <svg width="100%" height="100%" viewBox="0 0 120 80" fill="#8B4513" style="filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.2));">
+                <path d="M10 20 C0 30, 0 60, 10 70 L110 70 C120 60, 120 30, 110 20 Q60 0, 10 20 Z" />
+                <path d="M60 20 C40 0, 80 0, 60 20" stroke="rgba(0,0,0,0.3)" stroke-width="5" fill="none" />
+            </svg>
+        </div>
+        <div class="hint">Catch the falling leaves!</div>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const LEAF_COUNT = 30; // Number of leaves on screen
+
+        // --- DOM Elements ---
+        const gameContainer = document.getElementById('game-container');
+        const scoreEl = document.getElementById('score');
+        const basketEl = document.getElementById('basket');
+
+        // --- Game State ---
+        const leaves = []; // Array to store leaf objects and their properties
+        let isInteracting = false; // Flag for mouse/touch drag state
+        let score = 0; // Player's score
+        let lastInteractionX = 0; // Last recorded X position for swipe calculation
+        let basketX = window.innerWidth / 2; // Basket's horizontal position
+        let audioContext; // To handle web audio
+        let isAudioInitialized = false; // Flag to ensure audio context is started by user
+
+        // --- Leaf SVG Shape ---
+        // Using an inline SVG for the leaf shape allows for a more organic look 
+        // than simple CSS shapes, without needing external image files.
+        const leafSVG = `
+            <svg width="100%" height="100%" viewBox="0 0 50 100" preserveAspectRatio="none">
+                <path d="M25 0 C40 20, 45 60, 25 100 C5 60, 10 20, 25 0 Z" />
+            </svg>
+        `;
+
+        /**
+         * Creates a single leaf element and its corresponding state object.
+         * Each leaf has randomized properties to ensure visual variety.
+         */
+        function createLeaf() {
+            // 1. Create the DOM element
+            const leafEl = document.createElement('div');
+            leafEl.className = 'leaf';
+            leafEl.innerHTML = leafSVG;
+            gameContainer.appendChild(leafEl);
+
+            // 2. Create the state object with random properties
+            const leaf = {
+                el: leafEl,
+                x: 0,
+                y: 0,
+                size: 0,
+                speedX: 0,
+                speedY: 0,
+                rotation: 0,
+                rotationSpeed: 0,
+                waveAngle: 0, // Used for the gentle side-to-side drift
+            };
+
+            // 3. Initialize its properties with random values
+            resetLeaf(leaf);
+            
+            // 4. Set the initial y-position randomly across the screen height
+            leaf.y = Math.random() * window.innerHeight;
+
+            return leaf;
+        }
+
+        /**
+         * Resets a leaf's properties, typically when it goes off-screen.
+         * This function is key to creating an infinite falling effect.
+         * @param {object} leaf - The leaf state object to reset.
+         */
+        function resetLeaf(leaf) {
+            leaf.size = Math.random() * 20 + 20; // Size between 20px and 40px
+            leaf.el.style.width = `${leaf.size}px`;
+            leaf.el.style.height = `${leaf.size * 2}px`;
+
+            leaf.x = Math.random() * window.innerWidth;
+            leaf.y = -leaf.size * 2; // Start just above the screen
+            leaf.speedY = Math.random() * 0.8 + 0.4; // Vertical speed
+            leaf.speedX = 0; // Horizontal speed (affected by swiping)
+            leaf.rotation = Math.random() * 360;
+            leaf.rotationSpeed = Math.random() * 0.5 - 0.25;
+            leaf.waveAngle = Math.random() * Math.PI * 2;
+        }
+        
+        /**
+         * Spawns the initial set of leaves.
+         */
+        function initLeaves() {
+            for (let i = 0; i < LEAF_COUNT; i++) {
+                leaves.push(createLeaf());
+            }
+        }
+
+        /**
+         * Creates a ripple effect at a specified coordinate.
+         * @param {number} x - The horizontal position of the ripple.
+         * @param {number} y - The vertical position of the ripple.
+         */
+        function createRipple(x, y) {
+            const rippleEl = document.createElement('div');
+            rippleEl.className = 'ripple';
+            rippleEl.style.left = `${x}px`;
+            rippleEl.style.top = `${y}px`;
+            gameContainer.appendChild(rippleEl);
+
+            // The ripple is removed from the DOM after its animation completes.
+            // This is a crucial cleanup step to prevent performance degradation.
+            rippleEl.addEventListener('animationend', () => {
+                rippleEl.remove();
+            });
+        }
+        
+        // --- Audio Handling ---
+
+        /**
+         * Initializes the Web Audio API context.
+         * This must be called after a user interaction (e.g., a click or tap)
+         * to comply with browser autoplay policies.
+         */
+        function initAudio() {
+            if (isAudioInitialized) return;
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                isAudioInitialized = true;
+            } catch (e) {
+                console.error("Web Audio API is not supported in this browser.");
+            }
+        }
+
+        /**
+         * Plays a short, refreshing sound effect when a leaf is caught.
+         * It generates a sound wave from scratch using an Oscillator.
+         */
+        function playCatchSound() {
+            if (!isAudioInitialized || !audioContext) return;
+
+            // Create an oscillator (sound source) and a gain node (volume control)
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            const now = audioContext.currentTime;
+
+            // Configure the sound wave to be a high, soft "plink"
+            oscillator.type = 'sine'; // A pure, gentle tone
+            oscillator.frequency.setValueAtTime(880, now); // A high note (A5)
+            gainNode.gain.setValueAtTime(0.3, now); // Start at a modest volume
+
+            // Create a fast fade-out effect
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+            // Connect the audio components: Oscillator -> Volume -> Speakers
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            // Play the sound now and stop it after 0.2 seconds
+            oscillator.start(now);
+            oscillator.stop(now + 0.2);
+        }
+
+        // --- Event Handling (Unified for Touch and Mouse) ---
+        
+        // This section handles both touch and mouse events to support all devices.
+        // It determines whether an interaction is a quick tap (for a ripple) or
+        // a sustained drag/swipe (to move the basket).
+        
+        let interactionStartTime = 0;
+        let interactionStartPos = { x: 0, y: 0 };
+        const TAP_THRESHOLD_MS = 200; // Max duration for a tap
+        const TAP_THRESHOLD_PX = 10;  // Max distance moved for a tap
+
+        /**
+         * Moves the basket horizontally and keeps it within the screen bounds.
+         * @param {number} x - The target clientX position from a mouse/touch event.
+         */
+        function moveBasket(x) {
+            const basketWidth = basketEl.offsetWidth;
+            // Clamp the basket's center position to be within the screen
+            basketX = Math.max(basketWidth / 2, Math.min(window.innerWidth - basketWidth / 2, x));
+            basketEl.style.left = `${basketX}px`;
+        }
+
+        function handleInteractionStart(x, y) {
+            initAudio(); // Attempt to initialize audio on the first interaction
+            isInteracting = true;
+            interactionStartTime = Date.now();
+            interactionStartPos = { x, y };
+            moveBasket(x); // Immediately move basket on first touch/click
+        }
+        
+        function handleInteractionMove(x) {
+            if (!isInteracting) return;
+            moveBasket(x); // Move basket on drag
+        }
+        
+        function handleInteractionEnd(x, y) {
+            isInteracting = false;
+            
+            const duration = Date.now() - interactionStartTime;
+            const distance = Math.sqrt(
+                Math.pow(x - interactionStartPos.x, 2) + 
+                Math.pow(y - interactionStartPos.y, 2)
+            );
+
+            // If the interaction was short and didn't move much, it's a tap.
+            if (duration < TAP_THRESHOLD_MS && distance < TAP_THRESHOLD_PX) {
+                createRipple(x, y);
+            }
+        }
+
+        // Mouse event listeners
+        gameContainer.addEventListener('mousedown', (e) => handleInteractionStart(e.clientX, e.clientY));
+        gameContainer.addEventListener('mousemove', (e) => handleInteractionMove(e.clientX));
+        gameContainer.addEventListener('mouseup', (e) => handleInteractionEnd(e.clientX, e.clientY));
+        gameContainer.addEventListener('mouseleave', () => isInteracting = false); // Stop if mouse leaves window
+
+        // Touch event listeners
+        gameContainer.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            handleInteractionStart(touch.clientX, touch.clientY);
+        }, { passive: true });
+        
+        gameContainer.addEventListener('touchmove', (e) => {
+            const touch = e.touches[0];
+            handleInteractionMove(touch.clientX);
+        }, { passive: true });
+        
+        gameContainer.addEventListener('touchend', (e) => {
+            const touch = e.changedTouches[0];
+            handleInteractionEnd(touch.clientX, touch.clientY);
+        });
+
+
+        // --- Main Animation Loop ---
+
+        /**
+         * The core update function, called on every frame via requestAnimationFrame.
+         * This is more efficient than `setInterval` for animations.
+         */
+        function gameLoop() {
+            const screenHeight = window.innerHeight;
+            const screenWidth = window.innerWidth;
+            const basketRect = basketEl.getBoundingClientRect();
+
+            leaves.forEach(leaf => {
+                // 1. Update position
+                leaf.y += leaf.speedY;
+                leaf.x += leaf.speedX;
+                
+                // 2. Add gentle side-to-side waving motion
+                leaf.waveAngle += 0.02;
+                leaf.x += Math.sin(leaf.waveAngle) * 0.3;
+
+                // 3. Apply friction/drag to the horizontal speed so leaves stop drifting
+                leaf.speedX *= 0.97;
+
+                // 4. Update rotation
+                leaf.rotation += leaf.rotationSpeed;
+
+                // 5. Apply the new properties to the DOM element
+                leaf.el.style.transform = `translate(${leaf.x}px, ${leaf.y}px) rotate(${leaf.rotation}deg)`;
+
+                // 6. Check for collision with the basket
+                // We check if the leaf's center point is within the basket's bounds.
+                const leafBottomY = leaf.y + leaf.size * 2;
+                if (
+                    leafBottomY > basketRect.top &&
+                    leaf.y < basketRect.bottom &&
+                    leaf.x > basketRect.left &&
+                    leaf.x < basketRect.right
+                ) {
+                    playCatchSound(); // Play the sound effect on catch
+                    score++;
+                    scoreEl.textContent = `Score: ${score}`;
+                    resetLeaf(leaf); // Reset the leaf once caught
+                    return; // Skip to the next leaf
+                }
+
+
+                // 7. Reset leaf if it falls off the bottom or is pushed off the sides
+                if (leaf.y > screenHeight + leaf.size * 2 || leaf.x < -leaf.size * 2 || leaf.x > screenWidth + leaf.size * 2) {
+                    resetLeaf(leaf);
+                }
+            });
+
+            // Request the next frame
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- Start the Game ---
+        initLeaves();
+        gameLoop();
+
+    </script>
+</body>
+</html>
+
+
